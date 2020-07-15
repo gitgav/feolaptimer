@@ -1,52 +1,81 @@
 int sensorVal;
-bool started = false;
-unsigned int lapstart, lapend, laptime;
-int lapNum = 0;
+const int carNum = 2;
+int carStarted = 0;
+bool started[carNum];
+int lapNum[carNum];
+unsigned int lapstart[carNum], lapend[carNum], laptime[carNum];
 int delaySensor = 0;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-
+  pinMode(BUILTIN_LED, OUTPUT);
+  for (byte i = 0; i++; i < carNum){
+    started[i] = false;
+    lapNum[i] = 0;
+    lapend[i] = 0;
+  }
   
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   sensorVal = analogRead(A0);
-  
+
+  if (sensorVal < 50)
+  {
+    digitalWrite(BUILTIN_LED, 1);
+  }
+  else {
+    digitalWrite(BUILTIN_LED, 0);
+  }
+
   if (sensorVal > 50 && millis() - delaySensor > 2000){
     delaySensor = millis();
-    if (started){
-      endLap();
-    }
 
-    if (!started){
-      startLap();
+    endLap(carStarted);
+    carStarted += 1;
+
+    if (carStarted == carNum) {
+      carStarted = 0;
     }
+    
+    
   }
 }
 
-void startLap(){
-  lapstart = millis();
-  lapNum += 1;
-  started = true;
-}
+void endLap(int i){
 
-void endLap(){
-  lapend = millis();
-  laptime = lapend - lapstart;
+  if (!started[i]){
+    lapstart[i] = millis();
+    lapNum[i] += 1;
+    started[i] = true;
+  }
+  else {
+      lapend[i] = millis();
+      laptime[i] = lapend[i] - lapstart[i];
+    
+      //if (lapNum[i] != 1){
+      //  laptime[i] += 1000;
+      //}
+    
+      int s = int(laptime[i] / 1000);
+      int ms = laptime[i] - s * 1000;
+    
+      Serial.print("Car ");
+      Serial.print(i+1); 
+      Serial.print(", Lap ");
+      Serial.print(lapNum[i]);
+      Serial.print(": ");
+      Serial.print(s);
+      Serial.print(".");
+      Serial.print(ms);
+      Serial.println();
+    
+      //started[i] = false;
+      lapstart[i] = millis();
+      lapNum[i] += 1;
+    }
 
-  int s = int(laptime / 1000);
-  int ms = laptime - s * 1000;
 
-  Serial.print("Lap ");
-  Serial.print(lapNum);
-  Serial.print(": ");
-  Serial.print(s);
-  Serial.print(".");
-  Serial.print(ms);
-  Serial.println();
-
-  started = false;
 }
